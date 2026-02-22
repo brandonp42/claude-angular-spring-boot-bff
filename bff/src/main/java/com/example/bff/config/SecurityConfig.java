@@ -2,10 +2,6 @@ package com.example.bff.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.client.oidc.web.server.logout.OidcClientInitiatedServerLogoutSuccessHandler;
@@ -69,18 +65,20 @@ public class SecurityConfig {
 
     /**
      * Ensures the CSRF cookie is written on every response.
-     * Required because Spring Security 6 defers CSRF token generation;
-     * without this filter the cookie may never be set for the SPA.
+     * Required because Spring Security 6 defers CSRF token generation lazily;
+     * the CsrfToken Mono is not subscribed to (and the cookie not written) unless
+     * something explicitly forces it. Using beforeCommit ensures we read the attribute
+     * AFTER the security filter chain has populated it, and force-subscribe just
+     * before the response headers are sent.
      */
     @Bean
-    @Order(Ordered.HIGHEST_PRECEDENCE)
     public WebFilter csrfCookieWebFilter() {
         return (exchange, chain) -> {
-            Mono<CsrfToken> csrfToken = exchange.getAttributeOrDefault(
-                    CsrfToken.class.getName(), Mono.empty());
-            return csrfToken
-                    .doOnSuccess(token -> { /* force subscription to write cookie */ })
-                    .then(chain.filter(exchange));
+            exchange.getResponse().beforeCommit(() -> Mono.defer(() -> {
+                Mono<CsrfToken> csrfToken = exchange.getAttribute(CsrfToken.class.getName());
+                return csrfToken != null ? csrfToken.then() : Mono.empty();
+            }));
+            return chain.filter(exchange);
         };
     }
 }
