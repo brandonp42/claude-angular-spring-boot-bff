@@ -1,0 +1,66 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: bff
+
+  # --- OAuth2 / OIDC ---
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: bff-client
+            client-secret: bff-secret
+            scope: openid,profile,email
+            authorization-grant-type: authorization_code
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:9090/realms/app-realm
+
+  # --- Spring Session (Redis) ---
+  session:
+    store-type: redis
+    timeout: 30m
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: 6379
+
+  # --- Spring Cloud Gateway routes ---
+  cloud:
+    gateway:
+      routes:
+        # Route API calls to a downstream service with OAuth2 token relay.
+        # Uncomment and adjust the URI when you have a downstream API.
+        # - id: api
+        #   uri: ${API_URL:http://localhost:8081}
+        #   predicates:
+        #     - Path=/api/**
+        #   filters:
+        #     - TokenRelay=
+        #     - StripPrefix=1
+
+        # Route everything else to the Angular frontend.
+        - id: frontend
+          uri: ${FRONTEND_URL:http://localhost:4200}
+          predicates:
+            - Path=/**
+          order: 9999
+          filters:
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+logging:
+  level:
+    org.springframework.security: INFO
+    org.springframework.cloud.gateway: INFO

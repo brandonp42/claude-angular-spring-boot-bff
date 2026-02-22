@@ -1,0 +1,25 @@
+# Minimal infrastructure for local development.
+# Run: podman-compose -f podman-compose.infra.yml up -d
+# Then run the BFF and frontend locally (see README).
+services:
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 9090
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 9090
+      KC_HOSTNAME_STRICT: false
+      KC_HTTP_ENABLED: true
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:Z
+
+  redis:
+    image: docker.io/redis:7-alpine
+    ports:
+      - "6379:6379"

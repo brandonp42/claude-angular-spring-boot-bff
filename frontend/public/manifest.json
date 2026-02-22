@@ -1,0 +1,6 @@
+{
+  "short_name": "Angular BFF",
+  "name": "Angular BFF App",
+  "start_url": "/",
+  "display": "standalone"
+}

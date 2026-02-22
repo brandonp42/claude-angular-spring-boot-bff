@@ -1,0 +1,22 @@
+# Profile activated when running inside podman-compose.
+# Overrides provider URIs so the BFF container can reach Keycloak
+# via the compose network while the browser uses localhost.
+spring:
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            # Do NOT use issuer-uri here; specify endpoints explicitly
+            # so browser-facing URIs use localhost and server-to-server URIs
+            # use the compose service name.
+            authorization-uri: ${KEYCLOAK_BROWSER_URL:http://localhost:9090}/realms/app-realm/protocol/openid-connect/auth
+            token-uri: ${KEYCLOAK_BASE_URL:http://keycloak:9090}/realms/app-realm/protocol/openid-connect/token
+            user-info-uri: ${KEYCLOAK_BASE_URL:http://keycloak:9090}/realms/app-realm/protocol/openid-connect/userinfo
+            jwk-set-uri: ${KEYCLOAK_BASE_URL:http://keycloak:9090}/realms/app-realm/protocol/openid-connect/certs
+            user-name-attribute: preferred_username
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.cloud.gateway: DEBUG

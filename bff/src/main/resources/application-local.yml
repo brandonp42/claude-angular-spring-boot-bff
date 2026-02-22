@@ -1,0 +1,36 @@
+# Profile for running the BFF directly on the host (not in a container).
+# Use with: mvn spring-boot:run -Dspring.profiles.active=local
+# Assumes Keycloak on localhost:9090 and Redis on localhost:6379
+# (start them via: podman-compose -f podman-compose.infra.yml up -d)
+spring:
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:9090/realms/app-realm
+  data:
+    redis:
+      host: localhost
+
+  cloud:
+    gateway:
+      routes:
+        # - id: api
+        #   uri: http://localhost:8081
+        #   predicates:
+        #     - Path=/api/**
+        #   filters:
+        #     - TokenRelay=
+        #     - StripPrefix=1
+
+        - id: frontend
+          uri: http://localhost:4200
+          predicates:
+            - Path=/**
+          order: 9999
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.cloud.gateway: DEBUG
