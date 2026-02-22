@@ -17,7 +17,7 @@ spring:
             authorization-grant-type: authorization_code
         provider:
           keycloak:
-            issuer-uri: http://localhost:9090/realms/app-realm
+            issuer-uri: http://keycloak.localhost:9090/realms/app-realm
 
   # --- Spring Session (Redis) ---
   session:
